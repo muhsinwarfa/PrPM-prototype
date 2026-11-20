@@ -416,7 +416,10 @@ export default function App() {
           </div>
 
           {isSidebarOpen && (
-            <div className={`${sideColClass} lg:h-full lg:overflow-y-auto min-h-0`}>
+            <div
+              id="observatory-detail-inspector"
+              className={`${sideColClass} lg:h-full lg:overflow-y-auto min-h-0`}
+            >
               {mode === 'tour' ? (
                 <GuidedTourBar
                   steps={GUIDED_TOUR_STEPS}

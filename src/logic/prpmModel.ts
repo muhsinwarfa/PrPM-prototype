@@ -420,9 +420,7 @@ export function evaluateScriptedTeachingPolicy(
       )}% (+${tePp}pp).`,
       `Action occupies 1 officer for ${interventionDurationHours.toFixed(
         1
-      )}h (until t = ${(0 + interventionDurationHours).toFixed(1)}h offset), reducing free staff to ${
-        metrics.freeStaffN - 1
-      }.`,
+      )}h, reducing free staff to ${metrics.freeStaffN - 1}.`,
       `Uncertainty remains visible: CTE [${conformal.cteIntervalPp[0]}pp, +${conformal.cteIntervalPp[1]}pp], CIW [${conformal.ciwIntervalHours[0]}h, ${conformal.ciwIntervalHours[1]}h].`,
     ],
     opportunityCostNote:
@@ -791,7 +789,7 @@ export function advanceToNextEvent(state: SimulationState): SimulationState {
     return advanceSimulationTime(state, 0.5);
   }
   const earliestEnd = Math.min(...state.activeInterventions.map((i) => i.endsAtHours));
-  const delta = Math.max(0.5, Number((earliestEnd - state.elapsedHours).toFixed(2)));
+  const delta = Math.max(0.1, Number((earliestEnd - state.elapsedHours).toFixed(2)));
   return advanceSimulationTime(state, delta);
 }
 

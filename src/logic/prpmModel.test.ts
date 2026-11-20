@@ -113,6 +113,31 @@ test('updateTotalStaff preserves active commitments instead of silently dropping
   assert.equal(finished.pendingStaffN, null);
 });
 
+test('advanceToNextEvent jumps by exact 0.1h remainder and policy wording omits offset', () => {
+  const halfHourState = {
+    ...INITIAL_SIMULATION_STATE,
+    interventionDurationHours: 0.5,
+  };
+  const started = startCaseIntervention(halfHourState, 'B').nextState;
+  const atPointFour = advanceSimulationTime(started, 0.4);
+  assert.equal(atPointFour.elapsedHours, 0.4);
+  assert.equal(atPointFour.activeInterventions.length, 1);
+
+  const exactCompletion = advanceToNextEvent(atPointFour);
+  assert.equal(exactCompletion.elapsedHours, 0.5);
+  assert.equal(exactCompletion.activeInterventions.length, 0);
+
+  const metrics = computeResourceMetrics(1, 0, 3, 14);
+  const dec = evaluateScriptedTeachingPolicy(
+    INITIAL_CASES[1],
+    INITIAL_CASES,
+    metrics,
+    1.0,
+    1.0
+  );
+  assert.ok(dec.reasons.some((r) => r === 'Action occupies 1 officer for 1.0h, reducing free staff to 0.'));
+});
+
 test('recordDoNotInterveneDecision does not fabricate an observed outcome in episodeLedger', () => {
   const afterZero = recordDoNotInterveneDecision(INITIAL_SIMULATION_STATE, 'A');
   assert.equal(afterZero.decisionCount, 1);

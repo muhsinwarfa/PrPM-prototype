@@ -54,7 +54,14 @@ export const MobileGuidedSequence: React.FC<MobileGuidedSequenceProps> = ({
             <li key={node.id}>
               <button
                 type="button"
-                onClick={() => onSelectNode(node.id)}
+                onClick={() => {
+                  onSelectNode(node.id);
+                  requestAnimationFrame(() => {
+                    document
+                      .getElementById('observatory-detail-inspector')
+                      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  });
+                }}
                 className={`w-full text-left p-3 rounded-lg border flex items-center justify-between gap-2 transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
                   isSelected
                     ? 'bg-[#EFF6FF] border-[#1D4ED8] text-[#1E3A8A]'
