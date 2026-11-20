@@ -1,0 +1,6 @@
+{
+  "name": "The Process Observatory",
+  "description": "An interactive tabletop concept map for learning Prescriptive Process Monitoring under Resource Constraints (PrPM + PPO) starting from BPM fundamentals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

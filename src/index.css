@@ -1,0 +1,73 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #F7F8F5;
+    color: #24313A;
+  }
+
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-mono-tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Selective, calm SVG flow animations respecting reduced motion */
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@keyframes pulseRing {
+  0%, 100% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.06);
+  }
+}
+
+.animate-flow-dash {
+  animation: flowDash 1.8s linear infinite;
+}
+
+.animate-pulse-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pulseRing 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-flow-dash,
+  .animate-pulse-ring {
+    animation: none !important;
+  }
+}
+
+.reduced-motion .animate-flow-dash,
+.reduced-motion .animate-pulse-ring {
+  animation: none !important;
+}
+
+@media print {
+  body {
+    background: #FFFFFF !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
