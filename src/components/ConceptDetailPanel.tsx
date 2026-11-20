@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, ChevronDown, ChevronUp, ExternalLink, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Lock,
+  X,
+} from 'lucide-react';
 import type {
   ConceptEdge,
   ConceptNode,
   ConformalOutputs,
+  EpisodeRecord,
   LoanCase,
   ResourceMetrics,
 } from '../types/observatory';
 import { computeEntropyTU } from '../logic/prpmModel';
+import { WORKED_HISTORICAL_TRACE } from '../data/tourAndQuiz';
 
 interface ConceptDetailPanelProps {
   concept: ConceptNode | null;
@@ -16,10 +26,12 @@ interface ConceptDetailPanelProps {
   outgoingEdges: ConceptEdge[];
   selectedCase: LoanCase;
   allCases: LoanCase[];
-  onSelectCase: (id: 'A' | 'B' | 'C') => void;
+  onSelectCase: (id: 'A' | 'B' | 'C' | 'D') => void;
   onSelectConcept: (id: string | null) => void;
   conformal: ConformalOutputs;
   metrics: ResourceMetrics;
+  episodeLedger: EpisodeRecord[];
+  decisionCount: number;
 }
 
 const GROUP_COLOR_LABEL: Record<string, string> = {
@@ -44,19 +56,74 @@ export const ConceptDetailPanel: React.FC<ConceptDetailPanelProps> = ({
   onSelectConcept,
   conformal,
   metrics,
+  episodeLedger,
+  decisionCount,
 }) => {
   const [showSeparate, setShowSeparate] = useState(true);
   const [showTechnical, setShowTechnical] = useState(false);
+  const [workedK, setWorkedK] = useState(4);
 
   const findConceptTitle = (id: string) =>
     allConcepts.find((c) => c.id === id)?.plainTitle ?? id;
+
+  const workedStep =
+    WORKED_HISTORICAL_TRACE.steps.find((s) => s.k === workedK) ??
+    WORKED_HISTORICAL_TRACE.steps[2];
+
+  const renderCasePrefixBlock = () => (
+    <div
+      data-testid="observed-prefix-inspector"
+      className="border border-[#DCE1D9] bg-[#FAFBF9] rounded-lg p-3.5 space-y-2"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-sm font-semibold text-[#24313A]">
+          {selectedCase.label} Observed Prefix (K = {selectedCase.prefixLengthK})
+        </h3>
+        <div className="flex items-center gap-1 p-0.5 bg-[#EBEEE8] rounded-md">
+          {allCases.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => onSelectCase(c.id)}
+              className={`px-2 py-0.5 text-xs font-semibold rounded transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
+                selectedCase.id === c.id
+                  ? 'bg-white text-[#24313A] shadow-xs'
+                  : 'text-[#52606D] hover:text-[#24313A]'
+              }`}
+            >
+              {c.id}
+            </button>
+          ))}
+        </div>
+      </div>
+      <p className="text-xs text-[#52606D]">
+        {selectedCase.applicantSummary} · Stage: <strong>{selectedCase.currentStageLabel}</strong>
+      </p>
+      <p className="text-[11px] text-[#52606D]">
+        Only events observed up to now (future events cannot leak into live features):
+      </p>
+      <ol className="space-y-1 text-xs text-[#24313A]">
+        {selectedCase.prefixEvents.map((ev, idx) => (
+          <li
+            key={`${selectedCase.id}-${idx}`}
+            className="flex items-start gap-2 bg-white border border-[#E6E9E2] rounded-md px-2.5 py-1.5"
+          >
+            <span className="font-mono-tabular text-[#64748B] shrink-0">
+              e{idx + 1}
+            </span>
+            <span>{ev}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
 
   if (!concept) {
     const tu = computeEntropyTU(selectedCase.opNegativeProb);
     return (
       <aside
         aria-label="Observatory Inspector"
-        className="bg-white border border-[#DCE1D9] rounded-xl p-5 flex flex-col gap-5 h-full overflow-y-auto"
+        className="bg-white border border-[#DCE1D9] rounded-xl p-5 flex flex-col gap-4 h-full overflow-y-auto"
       >
         <div>
           <p className="text-xs font-medium text-[#52606D]">
@@ -65,57 +132,15 @@ export const ConceptDetailPanel: React.FC<ConceptDetailPanelProps> = ({
           <h2 className="font-display text-lg font-semibold text-[#24313A] mt-1">
             Point to any object on the table
           </h2>
-          <p className="text-sm text-[#475569] mt-2 leading-relaxed">
+          <p className="text-sm text-[#475569] mt-1.5 leading-relaxed">
             Click any landmark, instrument, or case piece on the map to trace what it receives, what it produces, and how it connects to your BPM foundation.
           </p>
         </div>
 
-        {/* Active Case Prefix Inspector */}
-        <div className="border-t border-[#E6E9E2] pt-4">
-          <div className="flex items-center justify-between gap-2">
-            <h3 className="font-display text-sm font-semibold text-[#24313A]">
-              Running Case Prefix (K = {selectedCase.prefixLengthK})
-            </h3>
-            <div className="flex items-center gap-1 p-0.5 bg-[#EBEEE8] rounded-md">
-              {allCases.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => onSelectCase(c.id)}
-                  className={`px-2.5 py-1 text-xs font-semibold rounded transition-colors ${
-                    selectedCase.id === c.id
-                      ? 'bg-white text-[#24313A] shadow-xs'
-                      : 'text-[#52606D] hover:text-[#24313A]'
-                  }`}
-                >
-                  {c.id}
-                </button>
-              ))}
-            </div>
-          </div>
-          <p className="text-xs text-[#52606D] mt-1">
-            {selectedCase.applicantSummary} · Stage: {selectedCase.currentStageLabel}
-          </p>
-          <p className="text-xs text-[#52606D] mt-2">
-            <strong>Observed history so far</strong> (K = {selectedCase.prefixLengthK} events; future events cannot leak):
-          </p>
-          <ol className="mt-2 space-y-1.5 text-xs text-[#24313A]">
-            {selectedCase.prefixEvents.map((ev, idx) => (
-              <li
-                key={ev}
-                className="flex items-start gap-2 bg-[#F7F8F5] border border-[#E6E9E2] rounded-md px-2.5 py-1.5"
-              >
-                <span className="font-mono-tabular text-[#64748B] shrink-0">
-                  e{idx + 1}
-                </span>
-                <span>{ev}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
+        {renderCasePrefixBlock()}
 
         {/* Live Instrument Readout Summary */}
-        <div className="border-t border-[#E6E9E2] pt-4 space-y-2.5">
+        <div className="border-t border-[#E6E9E2] pt-3 space-y-2.5">
           <h3 className="font-display text-sm font-semibold text-[#24313A]">
             Eight State Components Sₜ for {selectedCase.label}
           </h3>
@@ -195,6 +220,130 @@ export const ConceptDetailPanel: React.FC<ConceptDetailPanelProps> = ({
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Show the actual examined case's observed prefix immediately when clicking a case/prefix! */}
+      {(concept.id === 'active-prefix' || concept.id === 'loan-track') &&
+        renderCasePrefixBlock()}
+
+      {/* Worked Historical Trace-to-Prefix-to-Features Explorer */}
+      {(concept.id === 'historical-workbench' ||
+        concept.id === 'conformal-calibration') && (
+        <div className="border border-[#DCE1D9] bg-[#FAFBF8] rounded-lg p-3.5 space-y-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h3 className="font-display text-xs font-bold text-[#24313A]">
+                Worked Example: Trace → Prefix → Encoded Features
+              </h3>
+              <p className="text-[11px] text-[#52606D]">
+                {WORKED_HISTORICAL_TRACE.traceId} · {WORKED_HISTORICAL_TRACE.splitAssignment}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-medium text-[#52606D]">
+              Prefix cutoff K:
+            </span>
+            {WORKED_HISTORICAL_TRACE.steps.map((s) => (
+              <button
+                key={s.k}
+                type="button"
+                onClick={() => setWorkedK(s.k)}
+                className={`px-2 py-0.5 text-xs font-mono-tabular font-semibold rounded border focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
+                  workedK === s.k
+                    ? 'bg-[#24313A] text-white border-[#24313A]'
+                    : 'bg-white text-[#24313A] border-[#D4D9D0]'
+                }`}
+              >
+                K={s.k}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 gap-2 text-[11px]">
+            <div className="bg-white border border-[#DCE1D9] rounded p-2 space-y-1">
+              <div className="font-semibold text-[#0F766E]">
+                Included observed prefix (e1..e{workedStep.k}):
+              </div>
+              {workedStep.observedEvents.map((ev) => (
+                <div key={ev} className="text-[#24313A]">
+                  {ev}
+                </div>
+              ))}
+            </div>
+            <div className="bg-[#FFF7ED] border border-[#FED7AA] rounded p-2 space-y-1">
+              <div className="font-semibold text-[#9A3412] flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                Excluded future events (no leakage):
+              </div>
+              {workedStep.excludedFutureEvents.map((ev) => (
+                <div key={ev} className="text-[#7C2D12] opacity-80">
+                  {ev}
+                </div>
+              ))}
+            </div>
+            <div className="bg-[#EFF6FF] border border-[#BFDBFE] rounded p-2 space-y-1 text-[#1E3A8A]">
+              <div className="font-semibold">Encoded model input features:</div>
+              <div className="font-mono-tabular">
+                elapsed={workedStep.encodedFeatures.elapsedMinutes}m · riskFlags=
+                {workedStep.encodedFeatures.riskFlags} · firstOfferSent=
+                {String(workedStep.encodedFeatures.firstOfferSent)} · portalViews=
+                {workedStep.encodedFeatures.portalViews}
+              </div>
+            </div>
+            <div className="bg-white border border-[#DCE1D9] rounded p-2 space-y-1 text-[#334155]">
+              <div>
+                <strong>Predictive (OP/TU):</strong> {workedStep.predictiveAnswer}
+              </div>
+              <div>
+                <strong>Causal (TE):</strong> {workedStep.causalAnswer}
+              </div>
+              <div>
+                <strong>Survival (IW):</strong> {workedStep.survivalAnswer}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Ledger Live Episode Summary */}
+      {concept.id === 'feedback-ledger' && (
+        <div className="border border-[#DDD6FE] bg-[#FAF5FF] rounded-lg p-3.5 space-y-2 text-xs">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-[#5B21B6]">
+              Episode Ledger ({episodeLedger.length} outcomes · {decisionCount} decisions)
+            </span>
+          </div>
+          {episodeLedger.length === 0 ? (
+            <p className="text-[#52606D]">
+              No completed episode outcomes yet. Start an intervention in “What if?” and advance the logical clock to observe outcomes, training signals, and evaluated gain separately.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {episodeLedger.slice(-3).map((ep) => (
+                <div
+                  key={ep.id}
+                  className="bg-white border border-[#DDD6FE] rounded p-2 space-y-0.5"
+                >
+                  <div className="font-semibold text-[#24313A]">
+                    t={ep.timeHours.toFixed(1)}h · Case {ep.caseId} · Action {ep.action} →{' '}
+                    {ep.observedOutcome}
+                  </div>
+                  <div className="text-[11px] text-[#52606D]">{ep.consequence}</div>
+                  <div className="font-mono-tabular text-[11px] flex justify-between pt-0.5">
+                    <span className="text-[#6D28D9]">
+                      RL Signal: {ep.trainingRewardSignal > 0 ? `+${ep.trainingRewardSignal}` : ep.trainingRewardSignal}
+                    </span>
+                    <span className="text-[#24313A]">
+                      Eval Gain: {ep.evaluatedBusinessGain > 0 ? `+${ep.evaluatedBusinessGain}` : ep.evaluatedBusinessGain}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Analogy boundary if applicable */}
       {concept.analogyBoundary && (

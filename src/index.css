@@ -23,6 +23,13 @@
   }
 }
 
+/* Visible keyboard focus ring on interactive SVG elements */
+.svg-focus-target:focus-visible {
+  outline: 3px solid #1D4ED8;
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
 /* Selective, calm SVG flow animations respecting reduced motion */
 @keyframes flowDash {
   to {
@@ -32,12 +39,10 @@
 
 @keyframes pulseRing {
   0%, 100% {
-    opacity: 0.7;
-    transform: scale(1);
+    opacity: 0.75;
   }
   50% {
     opacity: 0.25;
-    transform: scale(1.06);
   }
 }
 
@@ -46,8 +51,6 @@
 }
 
 .animate-pulse-ring {
-  transform-box: fill-box;
-  transform-origin: center;
   animation: pulseRing 2.4s ease-in-out infinite;
 }
 

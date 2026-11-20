@@ -39,9 +39,9 @@ export const CONCEPT_NODES: ConceptNode[] = [
     badge: 'Textbook anchor',
     anchor: { x: 1320, y: 120 },
     oneSentence:
-      'Connects textbook process monitoring—which tracks KPIs and conformance—to real-time prescriptive control over active cases.',
+      'Specializes the textbook BPM monitoring and corrective-action loop to intervene on individual running cases.',
     bpmConnection:
-      'Extends the BPM Monitoring phase from passive dashboards and post-hoc corrective action to case-by-case runtime support.',
+      'The BPM textbook already covers process monitoring and corrective action; prescriptive monitoring extends that loop down to case-level runtime triggers.',
     receives: 'Performance alerts and operational objectives from the BPM Monitoring phase.',
     produces: 'Runtime triggers that evaluate whether an ongoing case should receive an intervention now.',
     whyNeeded:
@@ -212,7 +212,7 @@ export const CONCEPT_NODES: ConceptNode[] = [
     whyNeeded:
       'Identifies whether a case is heading toward trouble—and how confident the predictive model actually is.',
     avoidMisunderstanding:
-      'Aggregate model error rate is not a case’s predicted failure probability, and a COP set containing both outcomes does not mandate “never intervene.”',
+      'Do not confuse three distinct quantities: (1) historical process failure rate across all past loans, (2) a model’s overall prediction error rate on held-out cases, and (3) this case’s predicted risk OP. Also, a COP set containing both outcomes does not mandate “never intervene.”',
     keepSeparate: {
       title: 'Prediction of failure vs. evidence help will work',
       detail:

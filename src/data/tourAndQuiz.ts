@@ -1,4 +1,4 @@
-import type { QuizQuestion, TourStep } from '../types/observatory';
+import type { QuizQuestion, TourStep, WorkedHistoricalStep } from '../types/observatory';
 
 export const GUIDED_TOUR_STEPS: TourStep[] = [
   {
@@ -6,114 +6,134 @@ export const GUIDED_TOUR_STEPS: TourStep[] = [
     stepNumber: 1,
     title: 'Textbook BPM Lifecycle',
     subtitle: 'Outer frame: Manage the process as a whole',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['bpm-lifecycle', 'monitoring-bridge'],
     focusEdgeIds: ['edge-lifecycle-bridge', 'edge-bridge-track'],
     relationshipLabel: 'Monitoring insights inform process improvement & runtime control',
     explanation:
-      'Start with familiar BPM: Identification, Discovery, Analysis, Redesign, Implementation, and Monitoring manage the process over time. Prescriptive monitoring attaches to Monitoring to influence individual cases while they are still running—without turning customer applications into lifecycle steps.',
+      'Start with familiar BPM: Identification, Discovery, Analysis, Redesign, Implementation, and Monitoring already include monitoring and corrective action over time. Prescriptive monitoring specializes that loop to influence individual running cases—without moving customers through management phases.',
     takeaway: 'Process owners improve the whole process; runtime control helps specific running cases.',
   },
   {
     id: 'tour-running-case',
     stepNumber: 2,
     title: 'Running Case & Observed Prefix',
-    subtitle: 'Inner track: Execution produces events up to length K',
+    subtitle: 'Inner track: Case B has observed prefix K = 5',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['loan-track', 'active-prefix', 'intervention-activity'],
     focusEdgeIds: ['edge-track-prefix'],
     relationshipLabel: 'Execution produces events → Observed history forms a prefix (length K)',
     explanation:
-      'Cases A, B, and C are loan applications already underway. Clicking a case reveals its prefix—only events observed up to the current decision point (length K), with no future leakage. An intervention means preparing a second offer as a side activity.',
-    takeaway: 'K is prefix length (how many events we have seen so far), never the case ID.',
+      'Cases A, B, and C are loan applications already underway. Case B is currently examined at K = 5 observed events—only history up to now, with zero future leakage. Preparing a second offer is a side activity that does not require redrawing the whole process.',
+    takeaway: 'K is prefix length (events observed so far), never the case ID.',
   },
   {
     id: 'tour-prediction-insufficient',
     stepNumber: 3,
     title: 'Why Prediction Alone Is Insufficient',
-    subtitle: 'Historical workbench → Predictive model (OP)',
+    subtitle: 'Examining Case A: 90% risk, yet only +5pp benefit',
+    targetCaseId: 'A',
+    targetStaffN: 1,
     focusNodeIds: ['historical-workbench', 'sig-outcome-risk'],
     focusEdgeIds: ['edge-workbench-risk', 'edge-prefix-risk'],
     relationshipLabel: 'Historical prefixes train predictive model → Prefix informs OP',
     explanation:
-      'Case A has a 90% predicted probability of rejection (OP). A naive alert-by-risk rule would rush to help Case A. Yet high risk only tells us what is likely to go wrong—not whether our second offer can actually fix it.',
-    takeaway: 'A case can be very risky without being worth intervening on.',
+      'Look at Case A on the Risk instrument: it has a 90% predicted rejection probability (OP). A naive alert-by-risk threshold would rush to help Case A. Yet high risk only warns us that Case A is likely to fail—not that sending a second offer will change its outcome (+5pp).',
+    takeaway: 'A case can be very risky (Case A, 90%) without being worth intervening on.',
   },
   {
     id: 'tour-treatment-benefit',
     stepNumber: 4,
     title: 'Causal Treatment Benefit',
-    subtitle: 'Significance: What changes if we intervene?',
+    subtitle: 'Examining Case B: 30% → 80% (+50pp causal lift)',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['sig-treatment-effect', 'historical-workbench'],
     focusEdgeIds: ['edge-workbench-causal', 'edge-prefix-causal'],
     relationshipLabel: 'Causal model estimates counterfactual lift (TE)',
     explanation:
-      'The causal model compares two estimated alternatives for the same case: success without a second offer vs. success with one. For Case B, acceptance rises from 30% to 80% (+50pp), whereas Case A gains only +5pp. Both counterfactuals cannot be observed simultaneously.',
-    takeaway: 'Look for cases where the intervention changes the outcome, not merely high risk.',
+      'Now switch to Case B: the causal instrument compares two estimated alternatives—30% acceptance without a second offer vs. 80% with one (+50pp lift). Both alternatives cannot be observed simultaneously for the same case, and causal estimation relies on causal assumptions.',
+    takeaway: 'Look for persuadable cases where the intervention shifts the outcome, not merely high risk.',
   },
   {
     id: 'tour-urgency',
     stepNumber: 5,
     title: 'Urgency & Intervention Window',
-    subtitle: 'Urgency: How long can we still act?',
+    subtitle: 'Examining Case B: Narrow 0.5–1.5h window vs. Case C (4–8h)',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['urgency-window', 'active-prefix'],
     focusEdgeIds: ['edge-workbench-survival', 'edge-prefix-urgency'],
     relationshipLabel: 'Survival model estimates intervention window (IW)',
     explanation:
-      'Both Case B and Case C show +50pp estimated benefit. But survival analysis estimates Case B’s intervention window at 0.5–1.5 hours, while Case C has 4–8 hours. This window is narrower than ordinary remaining cycle time.',
-    takeaway: 'A useful intervention can still arrive too late if the window closes first.',
+      'Both Case B and Case C offer +50pp estimated benefit. Yet survival analysis estimates Case B’s intervention window at 0.5–1.5h, compared with 4–8h for Case C—and much shorter than Case B’s 4–9h total remaining cycle time.',
+    takeaway: 'A useful intervention still fails if the opportunity window closes before staff finish.',
   },
   {
     id: 'tour-uncertainty',
     stepNumber: 6,
     title: 'Visible Uncertainty: TU & Conformal Calibration',
-    subtitle: 'Calibration tray → COP, CTE, CIW',
+    subtitle: 'Calibration tray → COP, CTE, CIW (for Case B)',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['conformal-calibration', 'sig-outcome-risk', 'sig-treatment-effect', 'urgency-window'],
     focusEdgeIds: ['edge-workbench-calibration', 'edge-calibration-risk', 'edge-calibration-causal', 'edge-calibration-urgency'],
     relationshipLabel: 'Calibration data calibrate sets (COP) and intervals (CTE, CIW)',
     explanation:
-      'Separate calibration prefixes turn point predictions into conformal sets (COP) and intervals (CTE, CIW), while entropy TU measures predictive uncertainty. Calibration is a measuring procedure—not the decision maker—and nominal coverage is marginal across cases, not a per-case guarantee.',
+      'Held-out calibration prefixes turn point predictions into conformal sets (COP) and intervals (CTE, CIW), while entropy TU measures outcome uncertainty. Calibration is a measuring procedure—not the decision maker—and nominal coverage is marginal across exchangeable cases, not a per-case guarantee.',
     takeaway: 'Uncertainty remains visible rather than hidden inside single numbers.',
   },
   {
     id: 'tour-capacity',
     stepNumber: 7,
     title: 'Scarce Staff Capacity',
-    subtitle: 'Capacity: n, η, WIP, and arrival rate λ',
+    subtitle: 'Capacity: 1 free loan officer (n = 1, η = 100%)',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['capacity-resources', 'intervention-activity'],
     focusEdgeIds: ['edge-track-capacity', 'edge-intervention-capacity'],
     relationshipLabel: 'An intervention occupies a resource & limits other cases',
     explanation:
-      'With N = 1 loan officer, helping Case A, B, or C drops free staff n from 1 to 0 (η = n/N drops from 100% to 0%). Meanwhile WIP (active stock) and λ (incoming arrival flow) compete for that officer’s future hours.',
-    takeaway: 'Helping one case right now prevents helping another until the worker finishes.',
+      'With N = 1 loan officer, helping Case B drops free staff n from 1 to 0 (η drops from 100% to 0%) until the intervention duration finishes. Meanwhile active WIP stock and incoming flow λ compete for future capacity.',
+    takeaway: 'Helping one case occupies capacity and blocks other cases until completion.',
   },
   {
     id: 'tour-decision',
     stepNumber: 8,
     title: 'The Dispatch Desk & Eight-Component State',
     subtitle: 'Sₜ = (COP, TU, CTE, CIW, n, η, WIP, λ) → 1 or 0',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['decision-desk', 'sig-outcome-risk', 'sig-treatment-effect', 'urgency-window', 'capacity-resources'],
     focusEdgeIds: ['edge-risk-desk', 'edge-causal-desk', 'edge-urgency-desk', 'edge-capacity-desk', 'edge-desk-intervention'],
     relationshipLabel: 'Model outputs & capacity update Sₜ → Policy chooses 1 or 0',
     explanation:
-      'The policy receives all eight state components and chooses a binary action for the currently considered case: 1 (Intervene now) or 0 (Do not intervene now). Choosing 0 may leave a later chance open if the window holds, though it never guarantees one.',
+      'The policy reads all eight state components for Case B and chooses a binary action: 1 (Intervene now) or 0 (Do not intervene now). Choosing 0 can leave a later chance open if the window holds, though it never guarantees one.',
     takeaway: 'Evidence and resource constraints combine at the desk into one binary decision.',
   },
   {
     id: 'tour-learning',
     stepNumber: 9,
     title: 'Feedback Ledger & Policy Learning (PPO)',
-    subtitle: 'Observe → Act → Environment changes → Reward → Update policy',
+    subtitle: 'Observe → Act → Env changes → Outcome & Reward → Update policy',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: ['feedback-ledger', 'decision-desk'],
     focusEdgeIds: ['edge-desk-feedback', 'edge-feedback-desk'],
     relationshipLabel: 'Feedback updates the policy (separate from model calibration)',
     explanation:
-      'After actions play out, the feedback ledger separates shaped training rewards from evaluated business gain. PPO updates the policy to balance immediate gain against opportunity cost—keeping policy learning separate from fitting the predictive, causal, and survival models.',
-    takeaway: 'PPO teaches the policy when waiting saves scarce capacity for better opportunities.',
+      'When an intervention or waiting period completes and an outcome is observed, the feedback ledger separates shaped RL training signals from evaluated business gain. PPO updates the policy to weigh opportunity cost—distinct from offline fitting/calibration of the three supporting models.',
+    takeaway: 'PPO learns from delayed consequences when waiting protects capacity for better opportunities.',
   },
   {
     id: 'tour-recap',
     stepNumber: 10,
     title: 'Whole-System Recap',
     subtitle: 'Two loops working at two timescales',
+    targetCaseId: 'B',
+    targetStaffN: 1,
     focusNodeIds: [
       'bpm-lifecycle',
       'loan-track',
@@ -128,10 +148,106 @@ export const GUIDED_TOUR_STEPS: TourStep[] = [
     focusEdgeIds: [],
     relationshipLabel: 'All landmarks connected: Process governance + Runtime prescription',
     explanation:
-      'You can now trace the full observatory: historical logs train and calibrate Significance and Urgency instruments; live capacity tracks Capacity; the Decision Desk weighs all eight components for a binary action; Feedback refines the policy; and aggregate Monitoring informs BPM Redesign.',
-    takeaway: 'A good decision is worthwhile, timely, confident enough, and feasible with today’s staff.',
+      'Historical logs train and calibrate Significance and Urgency instruments; live monitoring tracks Capacity; the Dispatch Desk weighs all eight components for a binary action; Feedback refines the policy; and aggregate Monitoring informs BPM Redesign.',
+    takeaway: 'A sound intervention is worthwhile, timely, confident enough, and feasible with today’s staff.',
   },
 ];
+
+export const WORKED_HISTORICAL_TRACE: {
+  traceId: string;
+  splitAssignment: string;
+  finalOutcome: string;
+  steps: WorkedHistoricalStep[];
+} = {
+  traceId: 'Historical Trace #H-104 (Completed Loan Application)',
+  splitAssignment: 'Training Split (all prefixes K = 2..5 from #H-104 stay in Training — zero leakage)',
+  finalOutcome: '2nd offer sent → Loan Accepted (+60 value, −25 cost)',
+  steps: [
+    {
+      k: 2,
+      observedEvents: ['e1: Application received (09:00)', 'e2: Credit screening (09:20)'],
+      excludedFutureEvents: [
+        'e3: Assessment completed (09:50)',
+        'e4: First offer sent (10:15)',
+        'e5: Customer portal revisit (11:00)',
+        'e6: 2nd offer sent & Accepted (12:40)',
+      ],
+      encodedFeatures: {
+        elapsedMinutes: 20,
+        riskFlags: 1,
+        firstOfferSent: false,
+        portalViews: 0,
+      },
+      predictiveAnswer: 'Early baseline risk only (OP ≈ 65%, high uncertainty TU).',
+      causalAnswer: '2nd-offer treatment effect not open yet (first offer not sent).',
+      survivalAnswer: 'Intervention window has not opened yet.',
+    },
+    {
+      k: 3,
+      observedEvents: [
+        'e1: Application received (09:00)',
+        'e2: Credit screening (09:20)',
+        'e3: Assessment completed (09:50)',
+      ],
+      excludedFutureEvents: [
+        'e4: First offer sent (10:15)',
+        'e5: Customer portal revisit (11:00)',
+        'e6: 2nd offer sent & Accepted (12:40)',
+      ],
+      encodedFeatures: {
+        elapsedMinutes: 50,
+        riskFlags: 1,
+        firstOfferSent: false,
+        portalViews: 0,
+      },
+      predictiveAnswer: 'Moderate-high rejection risk (OP ≈ 68%).',
+      causalAnswer: 'Waiting for first offer before 2nd-offer causal lift applies.',
+      survivalAnswer: 'Expected offer preparation time remaining.',
+    },
+    {
+      k: 4,
+      observedEvents: [
+        'e1: Application received (09:00)',
+        'e2: Credit screening (09:20)',
+        'e3: Assessment completed (09:50)',
+        'e4: First offer sent (10:15)',
+      ],
+      excludedFutureEvents: [
+        'e5: Customer portal revisit (11:00)',
+        'e6: 2nd offer sent & Accepted (12:40)',
+      ],
+      encodedFeatures: {
+        elapsedMinutes: 75,
+        riskFlags: 1,
+        firstOfferSent: true,
+        portalViews: 0,
+      },
+      predictiveAnswer: 'OP = 70% rejection risk (TU = 0.88 bits).',
+      causalAnswer: 'Estimated treatment lift TE = +45pp if 2nd offer is sent.',
+      survivalAnswer: 'Estimated intervention window IW ≈ 1.5–2.5h.',
+    },
+    {
+      k: 5,
+      observedEvents: [
+        'e1: Application received (09:00)',
+        'e2: Credit screening (09:20)',
+        'e3: Assessment completed (09:50)',
+        'e4: First offer sent (10:15)',
+        'e5: Customer portal revisit (11:00)',
+      ],
+      excludedFutureEvents: ['e6: 2nd offer sent & Accepted (12:40)'],
+      encodedFeatures: {
+        elapsedMinutes: 120,
+        riskFlags: 1,
+        firstOfferSent: true,
+        portalViews: 2,
+      },
+      predictiveAnswer: 'OP = 70% rejection risk; portal revisits confirm hesitation.',
+      causalAnswer: 'TE rises to +50pp (30% → 80% acceptance with 2nd offer).',
+      survivalAnswer: 'Window narrows sharply: IW ≈ 0.5–1.5h before customer walks away.',
+    },
+  ],
+};
 
 export const CHECK_UNDERSTANDING_QUESTIONS: QuizQuestion[] = [
   {
@@ -203,46 +319,46 @@ export const CHECK_UNDERSTANDING_QUESTIONS: QuizQuestion[] = [
 
 export const STUDY_EVIDENCE_SECTIONS = [
   {
-    title: 'Event Logs Evaluated in the Paper',
+    title: 'Event Logs & Interventions Evaluated in Shoush & Dumas (v1 2023 / v2 2024)',
     summary:
-      'Shoush & Dumas evaluate their framework on three real-world public benchmark logs from process mining, constructing simulated online evaluation environments with realistic intervention costs, outcomes, and resource limits:',
+      'The paper evaluates its framework on three real-world public event logs inside simulated online evaluation environments with finite resources and intervention durations:',
     items: [
       {
         name: 'BPIC2012 (Loan Application Process)',
         detail:
-          'Consumer loan applications at a Dutch financial institution. Interventions correspond to sending an additional loan offer (creating/communicating a second offer) to improve acceptance likelihood.',
+          'Consumer loan applications at a Dutch financial institution. Intervention: sending an additional loan offer (2nd offer) to increase acceptance likelihood while consuming officer capacity.',
       },
       {
         name: 'BPIC2017 (Expanded Loan Application Process)',
         detail:
-          'Larger, richer loan origination log from the same banking domain with multiple offers, customer responses, and cancellations.',
+          'Larger loan origination log from the same banking domain with multi-offer trajectories. Intervention: creating/sending an additional loan offer.',
       },
       {
         name: 'TrafficFines (Road Traffic Fine Management)',
         detail:
-          'Public administration process tracking fine notifications, payments, and appeals—demonstrating the approach outside banking.',
+          'High-volume public administration log tracking traffic fine notifications, payments, and escalations. Intervention: triggering a collection/reminder action to resolve unpaid fines before costly escalation.',
       },
     ],
   },
   {
-    title: 'Core Conceptual Findings (Under Study Assumptions)',
+    title: 'Empirical Findings & Qualifications (Revised 2024 Version, arXiv:2307.06564v2)',
     summary:
-      'Note: Specific numerical monetary totals and episode convergence counts vary across versions and experimental configurations; because the full paper PDF is not attached here, exact benchmark figures are intentionally withheld rather than guessed.',
+      'Because the full paper PDF/tables are not bundled in this app’s local assets, exact monetary gain numbers and episode counts are withheld rather than interpolated. Below is what the revised 2024 evaluation reports conceptually under its experimental assumptions:',
     items: [
       {
-        name: 'Resource Scarcity Changes Optimal Decisions',
+        name: 'RL Baselines (BL1 & BL2) vs. Simple Thresholds',
         detail:
-          'When staff capacity N is tight relative to arrival flow λ and WIP, policies that intervene purely on risk or naive expected value exhaust staff early and miss higher-leverage cases later.',
+          'In arXiv:2307.06564v2 (Evaluation), the proposed uncertainty-aware PPO agent is compared against RL-based baselines (BL1 and BL2) rather than only fixed-threshold rules. A fixed threshold is shown in this app purely as a teaching comparator.',
       },
       {
-        name: 'Uncertainty-Aware RL Outperforms Myopic Thresholds',
+        name: 'Resource Scarcity & Dataset Nuances',
         detail:
-          'Under the study’s simulation assumptions, feeding conformal uncertainty (COP, CTE, CIW) and entropy (TU) alongside capacity signals (n, η, WIP, λ) into PPO yielded higher evaluated net gain than fixed-threshold baselines—without claiming global optimality.',
+          'Uncertainty and capacity signals help PPO balance immediate gain against opportunity cost when resources are tight—though v2 also documents important limitations, including comparable performance to baselines on TrafficFines in some configurations and unstable positive-gain behavior in some BPIC2017 settings.',
       },
       {
-        name: 'Learning Speed & Reward Shaping',
+        name: 'Delayed Feedback & Reward Shaping',
         detail:
-          'Shoush & Dumas use shaped, conditional training rewards (distinct from final evaluated business gain) to help PPO converge more reliably when intervention feedback is delayed and resource contention couples decisions across time.',
+          'The paper uses shaped, conditional training rewards (separate from final evaluated net business gain) so PPO can learn despite delayed case outcomes and capacity contention across episodes, without claiming guaranteed global optimality.',
       },
     ],
   },
@@ -250,27 +366,31 @@ export const STUDY_EVIDENCE_SECTIONS = [
 
 export const VERIFIED_SOURCES = [
   {
-    title: 'Shoush & Dumas (2023 Preprint) — Prescriptive Process Monitoring Under Resource Constraints: A Reinforcement Learning Approach',
+    title:
+      'Shoush & Dumas (2023 Preprint) — Prescriptive Process Monitoring Under Resource Constraints: A Reinforcement Learning Approach',
     citation: 'arXiv:2307.06564v1',
     url: 'https://arxiv.org/abs/2307.06564v1',
-    status: 'Primary source (link verified; exact tables not attached locally)',
+    status: 'External primary reference (preprint)',
   },
   {
-    title: 'Shoush & Dumas (2024 Revised Version) — Prescriptive Process Monitoring Under Resource Constraints: A Reinforcement Learning Approach',
+    title:
+      'Shoush & Dumas (2024 Revised Version) — Prescriptive Process Monitoring Under Resource Constraints: A Reinforcement Learning Approach',
     citation: 'arXiv:2307.06564v2',
     url: 'https://arxiv.org/abs/2307.06564v2',
-    status: 'Primary source (link verified; exact tables not attached locally)',
+    status: 'External primary reference (revised evaluation with BL1/BL2 baselines)',
   },
   {
-    title: 'Angelopoulos & Bates (2021) — A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification',
+    title:
+      'Angelopoulos & Bates (2021) — A Gentle Introduction to Conformal Prediction and Distribution-Free Uncertainty Quantification',
     citation: 'arXiv:2107.07511',
     url: 'https://arxiv.org/abs/2107.07511',
-    status: 'Conformal prediction reference (link verified)',
+    status: 'External conformal prediction reference',
   },
   {
-    title: 'Dumas, La Rosa, Mendling & Reijers (2018) — Fundamentals of Business Process Management (2nd Edition)',
+    title:
+      'Dumas, La Rosa, Mendling & Reijers (2018) — Fundamentals of Business Process Management (2nd Edition)',
     citation: 'Springer, 2018',
     url: '',
-    status: 'Textbook anchor (chapter/page numbers omitted because textbook text is not attached)',
+    status: 'Textbook reference (BPM lifecycle, monitoring & corrective action, Little’s Law; chapter/page numbers omitted without attached text)',
   },
 ];

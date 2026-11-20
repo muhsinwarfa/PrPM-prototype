@@ -22,7 +22,6 @@ export interface ConceptNode {
   group: ConceptGroup;
   badge: ConceptRoleBadge;
   analogyBoundary?: string;
-  /** Position in the 1600x1080 tabletop SVG coordinate space for spotlight & edge anchors */
   anchor: { x: number; y: number };
   overviewLandmark?: boolean;
   oneSentence: string;
@@ -49,33 +48,57 @@ export interface ConceptEdge {
   to: string;
   verb: string;
   kind: FlowKind;
-  /** Optional SVG path override for clean museum-diagram curves */
   pathD?: string;
   labelPos?: { x: number; y: number };
 }
 
+export type CaseOpportunityStatus =
+  | 'not-yet-open'
+  | 'eligible'
+  | 'active'
+  | 'completed'
+  | 'expired';
+
 export interface LoanCase {
-  id: 'A' | 'B' | 'C';
+  id: 'A' | 'B' | 'C' | 'D';
   label: string;
   applicantSummary: string;
   currentStageIndex: number;
   currentStageLabel: string;
   prefixEvents: string[];
-  /** Prefix length K (number of observed events so far) */
   prefixLengthK: number;
-  /** Predicted negative outcome (rejection) probability OP in [0, 1] */
   opNegativeProb: number;
-  /** Estimated improvement in acceptance probability TE (percentage points as decimal, e.g. 0.50) */
   teImprovement: number;
-  /** Remaining ordinary process cycle time estimate in hours (distinct from IW) */
   remainingCycleTimeHours: [number, number];
-  /** Illustrative intervention window IW midpoint & base half-width in hours */
   iwBaseHours: {
     min: number;
     max: number;
   };
-  /** Position on the SVG process track */
+  iwRemainingHours: {
+    min: number;
+    max: number;
+  };
+  opportunityStatus: CaseOpportunityStatus;
+  hasFirstOffer: boolean;
   trackPos: { x: number; y: number };
+}
+
+export interface ActiveIntervention {
+  caseId: 'A' | 'B' | 'C' | 'D';
+  startedAtHours: number;
+  durationHours: number;
+  endsAtHours: number;
+}
+
+export interface EpisodeRecord {
+  id: string;
+  timeHours: number;
+  caseId: 'A' | 'B' | 'C' | 'D';
+  action: 0 | 1;
+  consequence: string;
+  observedOutcome: 'Accepted' | 'Rejected';
+  trainingRewardSignal: number;
+  evaluatedBusinessGain: number;
 }
 
 export interface ConformalOutputs {
@@ -87,6 +110,7 @@ export interface ConformalOutputs {
 
 export interface ResourceMetrics {
   totalStaffN: number;
+  pendingStaffN: number | null;
   freeStaffN: number;
   busyStaffCount: number;
   freeShareEta: number;
@@ -96,16 +120,21 @@ export interface ResourceMetrics {
 }
 
 export interface SimulationState {
-  selectedCaseId: 'A' | 'B' | 'C';
+  elapsedHours: number;
+  cases: LoanCase[];
+  selectedCaseId: 'A' | 'B' | 'C' | 'D';
   totalStaffN: number;
-  busyCaseIds: Array<'A' | 'B' | 'C'>;
-  completedInterventionCaseIds: Array<'A' | 'B' | 'C'>;
+  pendingStaffN: number | null;
+  activeInterventions: ActiveIntervention[];
   arrivalRatePerHour: number;
   interventionDurationHours: number;
-  /** 0.5 = narrow illustrative band, 1.0 = standard illustrative band, 1.8 = wide conservative band */
   uncertaintyScale: number;
+  wipStock: number;
+  cumulativeArrivals: number;
+  cumulativeCompletions: number;
+  decisionCount: number;
+  episodeLedger: EpisodeRecord[];
   lastActionLog: string;
-  feedbackCount: number;
 }
 
 export interface ScriptedPolicyDecision {
@@ -122,6 +151,8 @@ export interface TourStep {
   stepNumber: number;
   title: string;
   subtitle: string;
+  targetCaseId: 'A' | 'B' | 'C';
+  targetStaffN: number;
   focusNodeIds: string[];
   focusEdgeIds: string[];
   relationshipLabel: string;
@@ -136,4 +167,19 @@ export interface QuizQuestion {
   recommendedIndex: number;
   explanation: string;
   relatedConceptId: string;
+}
+
+export interface WorkedHistoricalStep {
+  k: number;
+  observedEvents: string[];
+  excludedFutureEvents: string[];
+  encodedFeatures: {
+    elapsedMinutes: number;
+    riskFlags: number;
+    firstOfferSent: boolean;
+    portalViews: number;
+  };
+  predictiveAnswer: string;
+  causalAnswer: string;
+  survivalAnswer: string;
 }

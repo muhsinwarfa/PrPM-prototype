@@ -9,11 +9,12 @@ import {
 
 interface CompareCasesPanelProps {
   cases: LoanCase[];
-  selectedCaseId: 'A' | 'B' | 'C';
-  onSelectCase: (id: 'A' | 'B' | 'C') => void;
-  busyCaseIds: Array<'A' | 'B' | 'C'>;
+  selectedCaseId: 'A' | 'B' | 'C' | 'D';
+  onSelectCase: (id: 'A' | 'B' | 'C' | 'D') => void;
+  activeCaseIds: Array<'A' | 'B' | 'C' | 'D'>;
   metrics: ResourceMetrics;
   uncertaintyScale: number;
+  elapsedHours: number;
   onResetExercise: () => void;
 }
 
@@ -21,15 +22,20 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
   cases,
   selectedCaseId,
   onSelectCase,
-  busyCaseIds,
+  activeCaseIds,
   metrics,
   uncertaintyScale,
+  elapsedHours,
   onResetExercise,
 }) => {
   const [learnerChoice, setLearnerChoice] = useState<'A' | 'B' | 'C' | ''>('');
   const [learnerReasoning, setLearnerReasoning] = useState('');
   const [revealed, setRevealed] = useState(false);
   const [showToyArithmetic, setShowToyArithmetic] = useState(false);
+
+  const exerciseCases = cases.filter((c) => c.id === 'A' || c.id === 'B' || c.id === 'C');
+  const isBaselineScenario =
+    metrics.totalStaffN === 1 && metrics.freeStaffN === 1 && elapsedHours === 0;
 
   const handleReset = () => {
     setLearnerChoice('');
@@ -47,31 +53,47 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="text-xs font-medium text-[#52606D]">
-            Three-Case Exercise · {metrics.freeStaffN} of {metrics.totalStaffN} officer free
+            Three-Case Exercise · {metrics.freeStaffN} of {metrics.totalStaffN} officer
+            {metrics.totalStaffN === 1 ? '' : 's'} free · t = {elapsedHours.toFixed(1)}h
           </p>
           <h2 className="font-display text-lg font-bold text-[#24313A] mt-0.5">
-            Compare Cases A, B, and C
+            Compare Cases A, B, and C side by side
           </h2>
         </div>
         <button
           type="button"
           onClick={handleReset}
-          className="px-2.5 py-1 text-xs font-medium border border-[#D4D9D0] rounded-md text-[#475569] hover:text-[#24313A] flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]"
+          className="px-2.5 py-1 text-xs font-medium border border-[#D4D9D0] rounded-md text-[#475569] hover:text-[#24313A] flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] shrink-0"
         >
           <RotateCcw className="w-3 h-3" />
           Reset
         </button>
       </div>
 
+      {!isBaselineScenario && (
+        <div className="bg-[#FFFBEB] border border-[#FDE68A] rounded-lg px-3 py-2 text-xs text-[#92400E] flex items-center justify-between gap-2">
+          <span>
+            Current sandbox state differs from the starting 1-officer exercise.
+          </span>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="font-semibold underline whitespace-nowrap shrink-0"
+          >
+            Restore 1-officer start
+          </button>
+        </div>
+      )}
+
       <p className="text-xs text-[#475569] leading-relaxed">
-        All three cases remain at their positions on the process track. Select any card to examine it on the tabletop instruments.
+        All three cases retain their positions on the inner track. Compare risk, causal lift, uncertainty, and window side by side below:
       </p>
 
-      {/* Side-by-side cards */}
-      <div className="grid grid-cols-1 gap-2.5">
-        {cases.map((c) => {
+      {/* Genuine side-by-side 3-column grid on md+ screens, stacked on mobile */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        {exerciseCases.map((c) => {
           const isSelected = c.id === selectedCaseId;
-          const isBusy = busyCaseIds.includes(c.id);
+          const isBusy = activeCaseIds.includes(c.id);
           const tu = computeEntropyTU(c.opNegativeProb);
           const conformal = computeIllustrativeConformalOutputs(c, uncertaintyScale);
           const baseAccept = Math.round((1 - c.opNegativeProb) * 100);
@@ -83,49 +105,59 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
               key={c.id}
               type="button"
               onClick={() => onSelectCase(c.id)}
-              className={`text-left p-3 rounded-lg border transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
+              className={`text-left p-3 rounded-lg border transition-colors flex flex-col gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
                 isSelected
                   ? 'border-[#1D4ED8] bg-[#EFF6FF]/60'
                   : 'border-[#DCE1D9] bg-[#FAFBF9] hover:bg-[#F1F4EE]'
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-1 border-b border-[#E6E9E2] pb-1.5">
                 <span className="font-display text-sm font-bold text-[#24313A]">
-                  {c.label} · K = {c.prefixLengthK}
+                  {c.label}
                 </span>
-                <span className="text-[11px] font-medium text-[#52606D]">
-                  {isBusy ? 'Officer busy on this case' : isSelected ? 'Examined on map' : 'Click to inspect'}
+                <span className="text-[10px] font-mono-tabular text-[#52606D]">
+                  K={c.prefixLengthK}
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
+              <div className="space-y-1.5 text-xs">
                 <div>
-                  <div className="text-[11px] text-[#52606D]">Negative OP</div>
+                  <div className="text-[10px] text-[#52606D]">Negative OP (TU)</div>
                   <div className="font-mono-tabular font-semibold text-[#9A3412]">
-                    {Math.round(c.opNegativeProb * 100)}%
-                  </div>
-                  <div className="text-[10px] font-mono-tabular text-[#64748B]">
-                    TU {tu.toFixed(2)}
+                    {Math.round(c.opNegativeProb * 100)}%{' '}
+                    <span className="text-[#64748B] font-normal">({tu.toFixed(2)})</span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-[#52606D]">Benefit TE</div>
+                  <div className="text-[10px] text-[#52606D]">Causal Benefit TE</div>
                   <div className="font-mono-tabular font-semibold text-[#1D4ED8]">
-                    +{tePp}pp
-                  </div>
-                  <div className="text-[10px] font-mono-tabular text-[#64748B]">
-                    {baseAccept}% → {withAccept}%
+                    +{tePp}pp{' '}
+                    <span className="text-[#64748B] font-normal">
+                      ({baseAccept}%→{withAccept}%)
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[11px] text-[#52606D]">Window IW</div>
+                  <div className="text-[10px] text-[#52606D]">Window IW (CIW)</div>
                   <div className="font-mono-tabular font-semibold text-[#B45309]">
-                    {c.iwBaseHours.min}–{c.iwBaseHours.max}h
+                    {c.iwRemainingHours.min.toFixed(1)}–{c.iwRemainingHours.max.toFixed(1)}h
                   </div>
                   <div className="text-[10px] font-mono-tabular text-[#64748B]">
                     CIW [{conformal.ciwIntervalHours[0]}–{conformal.ciwIntervalHours[1]}h]
                   </div>
                 </div>
+              </div>
+
+              <div className="mt-auto pt-1 text-[10px] font-medium text-[#475569]">
+                {isBusy
+                  ? 'Officer busy here'
+                  : c.opportunityStatus === 'completed'
+                  ? 'Completed'
+                  : c.opportunityStatus === 'expired'
+                  ? 'Expired'
+                  : isSelected
+                  ? 'Examined on map'
+                  : 'Inspect'}
               </div>
             </button>
           );
@@ -136,14 +168,21 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
       <div className="border-t border-[#E6E9E2] pt-3 space-y-3">
         <div>
           <h3 className="font-display text-sm font-semibold text-[#24313A]">
-            Your prediction (1 free loan officer)
+            Your prediction ({metrics.freeStaffN} free loan officer
+            {metrics.freeStaffN === 1 ? '' : 's'})
           </h3>
           <p className="text-xs text-[#52606D] mt-0.5">
-            Which case deserves scarce help right now, and why?
+            {metrics.freeStaffN === 0
+              ? 'With 0 officers free right now, no case can start immediately—which one would deserve priority once an officer frees up?'
+              : 'Which case deserves scarce help right now, and why?'}
           </p>
         </div>
 
-        <div className="flex items-center gap-2" role="radiogroup" aria-label="Predict which case deserves help">
+        <div
+          className="flex items-center gap-2"
+          role="radiogroup"
+          aria-label="Predict which case deserves help"
+        >
           {(['A', 'B', 'C'] as const).map((id) => (
             <button
               key={id}
@@ -163,7 +202,10 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
         </div>
 
         <div>
-          <label htmlFor="learner-reason" className="block text-[11px] font-medium text-[#52606D] mb-1">
+          <label
+            htmlFor="learner-reason"
+            className="block text-[11px] font-medium text-[#52606D] mb-1"
+          >
             Explain your reasoning (optional)
           </label>
           <textarea
@@ -171,7 +213,7 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
             rows={2}
             value={learnerReasoning}
             onChange={(e) => setLearnerReasoning(e.target.value)}
-            placeholder="Compare risk, causal improvement, window, and the single officer..."
+            placeholder="Compare risk, causal improvement, window, and scarce capacity..."
             className="w-full text-xs p-2.5 bg-[#FAFBF9] border border-[#D4D9D0] rounded-lg text-[#24313A] placeholder-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]"
           />
         </div>
@@ -232,7 +274,7 @@ export const CompareCasesPanel: React.FC<CompareCasesPanelProps> = ({
               Toy incremental value = (Δ success probability × 60) − 25
             </div>
             <div className="grid grid-cols-3 gap-2 font-mono-tabular text-center">
-              {cases.map((c) => {
+              {exerciseCases.map((c) => {
                 const val = computeToyIncrementalValue(c.teImprovement, 60, 25);
                 return (
                   <div

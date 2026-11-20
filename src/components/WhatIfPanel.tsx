@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock, FastForward, RotateCcw } from 'lucide-react';
 import type {
   LoanCase,
   ResourceMetrics,
@@ -14,14 +14,16 @@ interface WhatIfPanelProps {
   selectedCase: LoanCase;
   metrics: ResourceMetrics;
   policyDecision: ScriptedPolicyDecision;
-  onSelectCase: (id: 'A' | 'B' | 'C') => void;
+  onSelectCase: (id: 'A' | 'B' | 'C' | 'D') => void;
   onChangeStaffN: (n: number) => void;
   onChangeArrivalRate: (rate: number) => void;
   onChangeDuration: (hours: number) => void;
   onChangeUncertaintyScale: (scale: number) => void;
-  onInterveneNow: (caseId: 'A' | 'B' | 'C') => void;
-  onDoNotInterveneNow: (caseId: 'A' | 'B' | 'C') => void;
-  onFinishIntervention: (caseId: 'A' | 'B' | 'C') => void;
+  onInterveneNow: (caseId: 'A' | 'B' | 'C' | 'D') => void;
+  onDoNotInterveneNow: (caseId: 'A' | 'B' | 'C' | 'D') => void;
+  onAdvanceTime: (deltaHours: number) => void;
+  onAdvanceNextEvent: () => void;
+  onApplyPreset: (preset: 'baseline' | 'demand-surge' | 'high-uncertainty') => void;
   onResetSimulation: () => void;
 }
 
@@ -38,15 +40,20 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
   onChangeUncertaintyScale,
   onInterveneNow,
   onDoNotInterveneNow,
-  onFinishIntervention,
+  onAdvanceTime,
+  onAdvanceNextEvent,
+  onApplyPreset,
   onResetSimulation,
 }) => {
-  const isCurrentBusy = simState.busyCaseIds.includes(selectedCase.id);
   const conformal = computeIllustrativeConformalOutputs(
     selectedCase,
     simState.uncertaintyScale
   );
   const tu = computeEntropyTU(selectedCase.opNegativeProb);
+  const canIntervene =
+    selectedCase.opportunityStatus === 'eligible' &&
+    selectedCase.hasFirstOffer &&
+    metrics.freeStaffN > 0;
 
   return (
     <aside
@@ -72,14 +79,83 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
         </button>
       </div>
 
+      {/* Logical Clock & Time Progression */}
+      <div className="bg-[#FAFBF9] border border-[#DCE1D9] rounded-lg p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2 text-xs">
+          <span className="font-semibold text-[#24313A] flex items-center gap-1.5">
+            <Clock className="w-3.5 h-3.5 text-[#B45309]" />
+            Logical Clock: <span className="font-mono-tabular">t = {simState.elapsedHours.toFixed(1)}h</span>
+          </span>
+          <span className="text-[11px] font-mono-tabular text-[#52606D]">
+            WIP: {metrics.wipCases} (+{simState.cumulativeArrivals} / −{simState.cumulativeCompletions})
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => onAdvanceTime(0.5)}
+            className="py-1.5 px-2.5 text-xs font-semibold rounded-md bg-white border border-[#D4D9D0] text-[#24313A] hover:bg-[#F1F4EE] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]"
+          >
+            Advance +0.5h
+          </button>
+          <button
+            type="button"
+            onClick={onAdvanceNextEvent}
+            className="py-1.5 px-2.5 text-xs font-semibold rounded-md bg-[#24313A] text-white hover:bg-[#1E293B] flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]"
+          >
+            <FastForward className="w-3.5 h-3.5" />
+            Next Event
+          </button>
+        </div>
+      </div>
+
+      {/* Teaching Scenario Presets */}
+      <div>
+        <span className="block text-[11px] font-semibold text-[#52606D] mb-1.5">
+          Teaching presets (see policy change):
+        </span>
+        <div className="grid grid-cols-3 gap-1.5">
+          <button
+            type="button"
+            onClick={() => onApplyPreset('baseline')}
+            className="py-1.5 px-2 text-[11px] font-medium rounded-md border border-[#D4D9D0] bg-[#FAFBF9] hover:bg-[#EBEEE8] text-[#24313A] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]"
+          >
+            Baseline
+          </button>
+          <button
+            type="button"
+            onClick={() => onApplyPreset('demand-surge')}
+            className="py-1.5 px-2 text-[11px] font-medium rounded-md border border-[#99F6E4] bg-[#F0FDFA] hover:bg-[#CCFBF1] text-[#0F766E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
+          >
+            Demand surge
+          </button>
+          <button
+            type="button"
+            onClick={() => onApplyPreset('high-uncertainty')}
+            className="py-1.5 px-2 text-[11px] font-medium rounded-md border border-[#BFDBFE] bg-[#EFF6FF] hover:bg-[#DBEAFE] text-[#1D4ED8] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8]"
+          >
+            High uncertainty
+          </button>
+        </div>
+      </div>
+
       {/* Examined case selector */}
       <div>
         <span className="block text-xs font-semibold text-[#52606D] mb-1.5">
           Currently examined case at Dispatch Desk
         </span>
-        <div className="grid grid-cols-3 gap-1.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
           {cases.map((c) => {
-            const busy = simState.busyCaseIds.includes(c.id);
+            const statusSuffix =
+              c.opportunityStatus === 'active'
+                ? ' (Busy)'
+                : c.opportunityStatus === 'completed'
+                ? ' (Done)'
+                : c.opportunityStatus === 'expired'
+                ? ' (Expired)'
+                : c.opportunityStatus === 'not-yet-open'
+                ? ' (Pending)'
+                : '';
             return (
               <button
                 key={c.id}
@@ -92,7 +168,7 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
                 }`}
               >
                 {c.label}
-                {busy ? ' (Busy)' : ''}
+                {statusSuffix}
               </button>
             );
           })}
@@ -107,7 +183,7 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
               Total loan officers (N)
             </label>
             <span className="font-mono-tabular font-semibold text-[#0F766E]">
-              N = {simState.totalStaffN} ({metrics.freeStaffN} free · η = {Math.round(metrics.freeShareEta * 100)}%)
+              N = {metrics.totalStaffN} ({metrics.freeStaffN} free · η = {Math.round(metrics.freeShareEta * 100)}%)
             </span>
           </div>
           <input
@@ -116,10 +192,15 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
             min={0}
             max={4}
             step={1}
-            value={simState.totalStaffN}
+            value={metrics.pendingStaffN ?? metrics.totalStaffN}
             onChange={(e) => onChangeStaffN(Number(e.target.value))}
             className="w-full accent-[#0F766E]"
           />
+          {metrics.pendingStaffN !== null && (
+            <p className="text-[11px] text-[#9A3412] mt-0.5">
+              Reduction to N = {metrics.pendingStaffN} scheduled once active interventions complete.
+            </p>
+          )}
         </div>
 
         <div>
@@ -214,7 +295,7 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
           <strong>Opportunity cost:</strong> {policyDecision.opportunityCostNote}
         </p>
         <p className="text-[10px] text-[#64748B]">
-          Transparency note: This is a deterministic teaching rule—not trained PPO or empirical paper output.
+          Transparency note: Deterministic scripted teaching rule—not trained PPO or empirical paper output.
         </p>
       </div>
 
@@ -226,7 +307,7 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
-            disabled={isCurrentBusy || metrics.freeStaffN <= 0}
+            disabled={!canIntervene}
             onClick={() => onInterveneNow(selectedCase.id)}
             className="py-2 px-3 text-xs font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#0D5E57] disabled:bg-[#CBD5E1] disabled:text-[#64748B] disabled:cursor-not-allowed transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F766E]"
           >
@@ -242,26 +323,29 @@ export const WhatIfPanel: React.FC<WhatIfPanelProps> = ({
         </div>
 
         {/* Active Busy Workers List */}
-        {simState.busyCaseIds.length > 0 && (
+        {simState.activeInterventions.length > 0 && (
           <div className="space-y-1.5 pt-1">
             <div className="text-[11px] font-semibold text-[#9A3412] flex items-center gap-1">
               <AlertCircle className="w-3.5 h-3.5" />
-              Active interventions occupying staff:
+              Active commitments (occupying staff until completion):
             </div>
-            {simState.busyCaseIds.map((busyId) => (
+            {simState.activeInterventions.map((iv) => (
               <div
-                key={busyId}
+                key={iv.caseId}
                 className="flex items-center justify-between gap-2 bg-[#FFF7ED] border border-[#FED7AA] rounded-md px-3 py-1.5 text-xs"
               >
-                <span className="font-medium text-[#9A3412]">
-                  Officer busy on Case {busyId}
-                </span>
+                <div className="text-[#9A3412]">
+                  <span className="font-semibold">Case {iv.caseId}</span>{' '}
+                  <span className="font-mono-tabular text-[11px]">
+                    ({iv.startedAtHours.toFixed(1)}h → {iv.endsAtHours.toFixed(1)}h)
+                  </span>
+                </div>
                 <button
                   type="button"
-                  onClick={() => onFinishIntervention(busyId)}
-                  className="px-2.5 py-1 text-[11px] font-semibold bg-white border border-[#FDBA74] text-[#9A3412] hover:bg-[#FFEDD5] rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B45309]"
+                  onClick={() => onAdvanceNextEvent()}
+                  className="px-2 py-1 text-[11px] font-semibold bg-white border border-[#FDBA74] text-[#9A3412] hover:bg-[#FFEDD5] rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B45309]"
                 >
-                  Finish &amp; release
+                  Advance to finish
                 </button>
               </div>
             ))}

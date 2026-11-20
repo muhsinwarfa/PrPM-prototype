@@ -47,6 +47,7 @@ export const WorkspaceToolbar: React.FC<WorkspaceToolbarProps> = ({
 }) => {
   const [query, setQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeMatchIndex, setActiveMatchIndex] = useState(0);
 
   const matches = useMemo(() => {
     const trimmed = query.trim().toLowerCase();
@@ -59,6 +60,14 @@ export const WorkspaceToolbar: React.FC<WorkspaceToolbarProps> = ({
         c.oneSentence.toLowerCase().includes(trimmed)
     );
   }, [concepts, query]);
+
+  const selectMatch = (id: string) => {
+    onSelectSurface('map');
+    onSelectConcept(id);
+    setQuery('');
+    setIsSearchOpen(false);
+    setActiveMatchIndex(0);
+  };
 
   const modes: Array<{ id: ObservatoryMode; label: string }> = [
     { id: 'explore', label: 'Explore' },
@@ -112,8 +121,15 @@ export const WorkspaceToolbar: React.FC<WorkspaceToolbarProps> = ({
             })}
           </div>
 
-          {/* Search box */}
-          <div className="relative">
+          {/* Search box with full keyboard navigation */}
+          <div
+            className="relative"
+            onBlur={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                setIsSearchOpen(false);
+              }
+            }}
+          >
             <label htmlFor="observatory-search" className="sr-only">
               Search concepts
             </label>
@@ -124,18 +140,52 @@ export const WorkspaceToolbar: React.FC<WorkspaceToolbarProps> = ({
             <input
               id="observatory-search"
               type="search"
+              role="combobox"
+              aria-expanded={isSearchOpen && query.trim().length > 0}
+              aria-controls="observatory-search-listbox"
+              aria-activedescendant={
+                isSearchOpen && matches[activeMatchIndex]
+                  ? `search-opt-${matches[activeMatchIndex].id}`
+                  : undefined
+              }
               value={query}
               onFocus={() => setIsSearchOpen(true)}
-              onBlur={() => setTimeout(() => setIsSearchOpen(false), 180)}
               onChange={(e) => {
                 setQuery(e.target.value);
                 setIsSearchOpen(true);
+                setActiveMatchIndex(0);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault();
+                  setIsSearchOpen(true);
+                  setActiveMatchIndex((idx) =>
+                    matches.length > 0 ? (idx + 1) % matches.length : 0
+                  );
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault();
+                  setIsSearchOpen(true);
+                  setActiveMatchIndex((idx) =>
+                    matches.length > 0
+                      ? (idx - 1 + matches.length) % matches.length
+                      : 0
+                  );
+                } else if (e.key === 'Enter') {
+                  if (matches.length > 0) {
+                    e.preventDefault();
+                    const picked = matches[activeMatchIndex] ?? matches[0];
+                    selectMatch(picked.id);
+                  }
+                } else if (e.key === 'Escape') {
+                  setIsSearchOpen(false);
+                }
               }}
               placeholder="Search concepts..."
               className="w-44 sm:w-52 pl-8 pr-3 py-1.5 text-xs bg-white border border-[#D4D9D0] rounded-lg text-[#24313A] placeholder-[#7B8794] focus:outline-none focus:ring-2 focus:ring-[#1D4ED8]"
             />
             {isSearchOpen && query.trim().length > 0 && (
               <div
+                id="observatory-search-listbox"
                 role="listbox"
                 aria-label="Matching concepts"
                 className="absolute right-0 mt-1 w-72 bg-white border border-[#D4D9D0] rounded-lg shadow-lg z-40 max-h-64 overflow-y-auto py-1"
@@ -145,18 +195,17 @@ export const WorkspaceToolbar: React.FC<WorkspaceToolbarProps> = ({
                     No concepts match “{query}”.
                   </p>
                 ) : (
-                  matches.map((item) => (
+                  matches.map((item, idx) => (
                     <button
                       key={item.id}
+                      id={`search-opt-${item.id}`}
                       type="button"
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        onSelectSurface('map');
-                        onSelectConcept(item.id);
-                        setQuery('');
-                        setIsSearchOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-[#F1F4EE] transition-colors flex flex-col gap-0.5"
+                      role="option"
+                      aria-selected={idx === activeMatchIndex}
+                      onClick={() => selectMatch(item.id)}
+                      className={`w-full text-left px-3 py-2 transition-colors flex flex-col gap-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1D4ED8] ${
+                        idx === activeMatchIndex ? 'bg-[#EFF6FF]' : 'hover:bg-[#F1F4EE]'
+                      }`}
                     >
                       <span className="text-xs font-semibold text-[#24313A]">
                         {item.plainTitle}
